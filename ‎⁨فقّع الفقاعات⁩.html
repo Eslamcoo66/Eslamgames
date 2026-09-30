@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>فقّع الفقاعات</title>
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Cairo:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6efe6;--ink:#2a1b3d;--b1:#ef476f;--b2:#ffd166;--b3:#06b6a4;--bomb:#2a1b3d;--panel:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#2a1b3d;--ink:#fff6e8;--bomb:#fff6e8;--panel:#3a2754}}
+:root[data-theme="dark"]{--bg:#2a1b3d;--ink:#fff6e8;--bomb:#fff6e8;--panel:#3a2754}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:'Cairo',system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden;user-select:none}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;font-weight:700;font-size:18px}
+h1{font-family:'Lalezar','Cairo',sans-serif;font-weight:400;font-size:26px;margin:0}
+#time{font-variant-numeric:tabular-nums;min-width:3ch;text-align:center}
+#arena{position:relative;flex:1;margin:0 12px 12px;background:var(--panel);border-radius:28px;overflow:hidden;touch-action:manipulation}
+.b{position:absolute;border-radius:50%;border:0;padding:0;cursor:pointer;transform:scale(0);animation:pop .25s forwards,fade var(--life) linear .25s forwards}
+.b.bomb,.b.gold,.b.clock{display:grid;place-items:center;font-weight:700;font-size:22px}
+.b.bomb{background:var(--bomb)!important;color:var(--panel)}
+.b.gold{background:#ffb703!important;color:#7a4b00;box-shadow:0 0 0 4px #fff3,0 0 18px #ffb703}
+.b.clock{background:#3a86ff!important;color:#fff;font-size:18px}
+#lv,#md{display:flex;gap:8px}#lv button,#md button{font:700 16px 'Cairo',sans-serif;border:2px solid var(--ink);background:none;color:var(--ink);border-radius:999px;padding:6px 18px;cursor:pointer}#lv button[aria-pressed=true],#md button[aria-pressed=true]{background:var(--ink);color:var(--panel)}
+#snd{font:500 15px 'Cairo',sans-serif;background:none;color:var(--ink);border:2px solid var(--ink);border-radius:999px;padding:6px 18px;cursor:pointer}
+@keyframes pop{to{transform:scale(1)}}
+@keyframes fade{to{transform:scale(.25);opacity:.2}}
+#arena.two{background:linear-gradient(#ef476f38 50%,#06b6a438 50%),var(--panel)}
+#sc{min-width:6ch}
+.ps{position:absolute;right:18px;font-family:'Lalezar','Cairo',sans-serif;font-size:64px;line-height:.9;opacity:.4;pointer-events:none;display:none}
+.ps small{font:700 16px 'Cairo',sans-serif}
+#arena.two .ps{display:block}#ps0{top:12px;color:var(--b1)}#ps1{bottom:12px;color:var(--b3)}
+#arena.two::after{content:'';position:absolute;left:0;right:0;top:50%;height:4px;margin-top:-2px;background:var(--ink);opacity:.4;pointer-events:none}
+.ring{position:absolute;border-radius:50%;border:4px solid;pointer-events:none;animation:ring .4s forwards}@keyframes ring{to{transform:scale(1.8);opacity:0}}
+.hit{position:absolute;font-family:'Lalezar',sans-serif;font-size:26px;pointer-events:none;animation:up .6s forwards}
+@keyframes up{to{transform:translateY(-40px);opacity:0}}
+#ov{position:absolute;inset:0;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;z-index:5}
+#ov h2{font-family:'Lalezar',sans-serif;font-weight:400;font-size:44px;margin:0}
+#ov p{margin:0;max-width:30ch;line-height:1.7}
+#go{font:700 20px 'Cairo',sans-serif;background:var(--b1);color:#fff;border:0;border-radius:999px;padding:12px 40px;cursor:pointer}
+#go:focus-visible,.b:focus-visible{outline:3px solid var(--b3);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){.b,.hit,.ring{animation-duration:.01s}}
+</style>
+</head>
+<body>
+<header><span id="sc">النقاط: <b>0</b></span><h1>فقّع الفقاعات</h1><span id="time">30</span></header>
+<div id="arena">
+  <div class="ps" id="ps0"></div><div class="ps" id="ps1"></div>
+  <div id="ov">
+    <h2 id="t">جاهز؟</h2>
+    <p id="d">فقّع الفقاعات الملونة قبل ما تختفي. الذهبية ★ بـ10 نقاط، والزرقاء بتزوّد 3 ثواني، والسودا بتخصم 5. كل 5 ضربات ورا بعض بتزوّد النقاط. في وضع لاعبين، كل واحد بيلعب في نصه من الشاشة، واللي نقاطه أكتر يكسب.</p>
+    <p id="best"></p>
+    <div id="md"><button data-p="1" aria-pressed="true">لاعب واحد</button><button data-p="2" aria-pressed="false">لاعبين</button></div>
+    <div id="lv"><button data-d="0" aria-pressed="false">سهل</button><button data-d="1" aria-pressed="true">عادي</button><button data-d="2" aria-pressed="false">صعب</button></div>
+    <button id="snd">🔊 الصوت شغال</button>
+    <p style="font-size:13px;opacity:.7">لو مسمعتش صوت، اتأكد إن الموبايل مش على الصامت</p>
+    <button id="go">ابدأ</button>
+  </div>
+</div>
+<script>
+const arena=document.getElementById('arena'),ov=document.getElementById('ov'),
+sc=document.getElementById('sc'),timeEl=document.getElementById('time'),
+colors=['var(--b1)','var(--b2)','var(--b3)'],pal=[['#ef476f','#ff7b54','#c9184a'],['#06b6a4','#3a86ff','#2d9d5c']];
+let S=[0,0],C=[0,0],n=0,players=1,left,tick,spawn,best=0,ac,mute=false,diff=1;const LM=[1.4,1,.75],RM=[1.3,1,.75],BP=[.08,.12,.17];
+function snd(f,d,t){if(mute||!ac)return;try{if(ac.state!=='running')ac.resume();const o=ac.createOscillator(),g=ac.createGain();o.type=t||'triangle';o.frequency.value=f;g.gain.setValueAtTime(.35,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d)}catch(e){}}
+function showScore(){if(players==1)sc.innerHTML='النقاط: <b>'+S[0]+'</b>';else{sc.textContent='';[0,1].forEach(i=>{document.getElementById('ps'+i).innerHTML='<small>لاعب '+(i+1)+'</small><br>'+S[i]})}}
+const loadBest=()=>{try{best=+localStorage.getItem('bobbles-best-'+diff)||0}catch(e){best=0}};
+const showBest=()=>{document.getElementById('best').textContent=best&&players==1?'أعلى نتيجة: '+best:''};
+loadBest();showBest();
+document.querySelectorAll('#md button').forEach(b=>b.addEventListener('click',()=>{players=+b.dataset.p;document.querySelectorAll('#md button').forEach(x=>x.setAttribute('aria-pressed',x===b));showBest()}));
+document.querySelectorAll('#lv button').forEach(b=>b.addEventListener('click',()=>{diff=+b.dataset.d;document.querySelectorAll('#lv button').forEach(x=>x.setAttribute('aria-pressed',x===b));loadBest();showBest()}));
+
+function float(x,y,txt){
+  const f=document.createElement('div');f.className='hit';f.textContent=txt;
+  f.style.left=x+'px';f.style.top=y+'px';arena.appendChild(f);setTimeout(()=>f.remove(),600);
+}
+function ring(b){const r=document.createElement('div');r.className='ring';r.style.cssText=`left:${b.offsetLeft}px;top:${b.offsetTop}px;width:${b.offsetWidth}px;height:${b.offsetHeight}px;border-color:${getComputedStyle(b).backgroundColor}`;arena.appendChild(r);setTimeout(()=>r.remove(),400)}
+function add(){
+  const w=arena.clientWidth,h=arena.clientHeight,
+  size=Math.max(46,Math.min(88,w*0.2))*(0.75+Math.random()*0.4),
+  life=Math.max(0.6,1.6-(30-left)*0.03)*LM[diff],
+  r=Math.random(),p0=BP[diff],type=r<p0?'bomb':r<p0+.05?'gold':r<p0+.1?'clock':'n',bomb=type==='bomb',
+  side=players==2?n++%2:0,lx=Math.random()*(w-size),ly=players==2?side*h/2+Math.random()*(h/2-size):Math.random()*(h-size),
+  b=document.createElement('button');
+  b.className='b '+type;b.textContent={bomb:'✕',gold:'★',clock:'+3'}[type]||'';
+  b.setAttribute('aria-label',{bomb:'فقاعة خطر',gold:'فقاعة ذهبية',clock:'فقاعة وقت'}[type]||'فقاعة');
+  b.style.cssText=`width:${size}px;height:${size}px;left:${lx}px;top:${ly}px;background:${(players==2?pal[side]:colors)[Math.random()*3|0]};--life:${life}s`;
+  const kill=()=>b.remove();
+  b.addEventListener('pointerdown',e=>{
+    e.preventDefault();try{navigator.vibrate(bomb?120:12)}catch(_){}
+    const r=arena.getBoundingClientRect(),x=e.clientX-r.left-10,y=e.clientY-r.top-20;
+    if(bomb){S[side]=Math.max(0,S[side]-5);C[side]=0;float(x,y,'-5');snd(120,.25,'sawtooth')}
+    else if(type==='clock'){left=Math.min(left+3,45);timeEl.textContent=left;float(x,y,'+3 ثواني');snd(660,.15)}
+    else{C[side]++;const p=type==='gold'?10:1+Math.floor(C[side]/5);S[side]+=p;float(x,y,'+'+p);snd(type==='gold'?1040:380+Math.min(C[side],12)*40,.1)}
+    showScore();ring(b);kill();
+  });
+  b.addEventListener('animationend',ev=>{if(ev.animationName==='fade'){if(type==='n')C[side]=0;kill()}});
+  arena.appendChild(b);
+}
+function loop(){add();spawn=setTimeout(loop,Math.max(300,800-(30-left)*15)*RM[diff]*(players==2?.65:1))}
+function start(){
+  S=[0,0];C=[0,0];n=0;left=30;showScore();timeEl.textContent=left;arena.classList.toggle('two',players==2);
+  arena.querySelectorAll('.b,.hit').forEach(n=>n.remove());ov.style.display='none';
+  loop();
+  tick=setInterval(()=>{timeEl.textContent=--left;if(left<=0)end()},1000);
+}
+function end(){
+  clearInterval(tick);clearTimeout(spawn);
+  arena.querySelectorAll('.b').forEach(n=>n.remove());
+  const isBest=players==1&&S[0]>best;
+  if(isBest){best=S[0];try{localStorage.setItem('bobbles-best-'+diff,best)}catch(e){}}
+  document.getElementById('t').textContent='خلص الوقت';
+  document.getElementById('d').textContent=players==1?'جبت '+S[0]+' نقطة'+(isBest&&S[0]>0?' — رقم قياسي جديد!':''):(S[0]>S[1]?'اللاعب 1 كسب 🎉':S[1]>S[0]?'اللاعب 2 كسب 🎉':'تعادل!')+' ('+S[0]+' : '+S[1]+')';
+  document.getElementById('go').textContent='العب تاني';
+  showBest();ov.style.display='flex';
+}
+document.getElementById('go').addEventListener('click',()=>{try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume();snd(440,.08)}catch(e){}start()});
+document.addEventListener('pointerdown',()=>{if(ac&&ac.state==='suspended')ac.resume()},{passive:true});
+document.getElementById('snd').addEventListener('click',e=>{mute=!mute;e.target.textContent=mute?'🔇 الصوت مقفول':'🔊 الصوت شغال'});
+</script>
+</body>
+</html>
